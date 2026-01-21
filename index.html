@@ -3,24 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eye Tracking YouTube - WebGazer Real</title>
-    <script src="https://cdn.jsdelivr.net/npm/webgazer@2.0.1/dist/webgazer.js"></script>
+    <title>Eye Tracking YouTube - WebGazer</title>
+    <script src="https://webgazer.cs.brown.edu/webgazer.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
         }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+        .container { max-width: 1200px; margin: 0 auto; }
         .panel {
             background: rgba(255, 255, 255, 0.95);
             border-radius: 15px;
@@ -28,10 +21,7 @@
             margin-bottom: 20px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         }
-        h1 {
-            color: #333;
-            margin-bottom: 10px;
-        }
+        h1 { color: #333; margin-bottom: 10px; }
         .status {
             background: #e3f2fd;
             border-left: 4px solid #2196F3;
@@ -41,12 +31,7 @@
             color: #1565C0;
             font-weight: 500;
         }
-        .controls {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin: 20px 0;
-        }
+        .controls { display: flex; gap: 10px; flex-wrap: wrap; margin: 20px 0; }
         button {
             padding: 12px 24px;
             border: none;
@@ -56,20 +41,12 @@
             font-size: 14px;
             transition: all 0.3s;
         }
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-green { background: #4CAF50; color: white; }
-        .btn-green:hover:not(:disabled) { background: #45a049; }
         .btn-blue { background: #2196F3; color: white; }
-        .btn-blue:hover:not(:disabled) { background: #0b7dda; }
         .btn-orange { background: #FF9800; color: white; }
-        .btn-orange:hover:not(:disabled) { background: #e68900; }
         .btn-purple { background: #9C27B0; color: white; }
-        .btn-purple:hover:not(:disabled) { background: #7B1FA2; }
         .btn-red { background: #f44336; color: white; }
-        .btn-red:hover:not(:disabled) { background: #da190b; }
         
         input[type="text"] {
             flex: 1;
@@ -79,11 +56,7 @@
             font-size: 14px;
             min-width: 300px;
         }
-        .input-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
         .video-container {
             background: #000;
             border-radius: 10px;
@@ -91,13 +64,6 @@
             height: 500px;
             margin: 20px 0;
             position: relative;
-        }
-        #gazeCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            pointer-events: none;
-            z-index: 10;
         }
         .stats {
             display: grid;
@@ -111,16 +77,8 @@
             border-radius: 10px;
             text-align: center;
         }
-        .stat-label {
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 5px;
-        }
-        .stat-value {
-            font-size: 28px;
-            font-weight: bold;
-            color: #333;
-        }
+        .stat-label { font-size: 12px; color: #666; margin-bottom: 5px; }
+        .stat-value { font-size: 28px; font-weight: bold; color: #333; }
         .instructions {
             background: #fff3cd;
             border-left: 4px solid #ffc107;
@@ -128,16 +86,27 @@
             margin-top: 20px;
             border-radius: 5px;
         }
-        .instructions h3 {
-            color: #856404;
-            margin-bottom: 10px;
+        .instructions h3 { color: #856404; margin-bottom: 10px; }
+        
+        /* Ocultar elementos de WebGazer que no necesitamos */
+        #webgazerVideoFeed { 
+            position: fixed !important;
+            top: 10px !important;
+            right: 10px !important;
+            width: 200px !important;
+            height: 150px !important;
+            z-index: 9999 !important;
+            border: 3px solid #4CAF50 !important;
+            border-radius: 10px !important;
         }
+        #webgazerFaceOverlay { display: block !important; }
+        #webgazerFaceFeedbackBox { display: block !important; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="panel">
-            <h1>👁️ Eye Tracking YouTube - WebGazer Real</h1>
+            <h1>👁️ Eye Tracking YouTube</h1>
             <div class="status" id="status">Cargando WebGazer...</div>
 
             <div class="input-group">
@@ -146,7 +115,7 @@
             </div>
 
             <div class="controls">
-                <button id="calibrateBtn" class="btn-green" onclick="startCalibration()">Iniciar Calibración</button>
+                <button id="calibrateBtn" class="btn-green" onclick="startCalibration()" disabled>Iniciar Calibración</button>
                 <button id="startBtn" class="btn-blue" onclick="startTracking()" disabled>▶ Iniciar Rastreo</button>
                 <button id="stopBtn" class="btn-orange" onclick="stopTracking()" disabled>⏸ Detener Rastreo</button>
                 <button id="downloadBtn" class="btn-purple" onclick="downloadCSV()" disabled>⬇ Descargar CSV</button>
@@ -154,7 +123,6 @@
 
             <div class="video-container">
                 <div id="player"></div>
-                <canvas id="gazeCanvas"></canvas>
             </div>
 
             <div id="statsPanel" style="display: none;">
@@ -180,15 +148,15 @@
             <div class="instructions">
                 <h3>📋 Instrucciones:</h3>
                 <ol style="margin-left: 20px; color: #856404;">
-                    <li style="margin: 8px 0;"><strong>Permite el acceso a la cámara</strong> cuando te lo pida</li>
-                    <li style="margin: 8px 0;">Presiona "Iniciar Calibración" y <strong>haz clic en cada punto rojo</strong> que aparece (9 puntos en total)</li>
-                    <li style="margin: 8px 0;">Mantén tu cabeza quieta y mira directamente cada punto</li>
+                    <li style="margin: 8px 0;">Presiona "Iniciar Calibración" y <strong>permite el acceso a la cámara</strong></li>
+                    <li style="margin: 8px 0;">Verás tu rostro en la esquina superior derecha - <strong>¡asegúrate de que esté bien visible!</strong></li>
+                    <li style="margin: 8px 0;"><strong>HAZ CLIC en 9 puntos diferentes</strong> de la pantalla mientras los miras (arriba-izq, arriba-centro, arriba-der, etc.)</li>
+                    <li style="margin: 8px 0;">Espera 20 segundos para que WebGazer aprenda tu mirada</li>
                     <li style="margin: 8px 0;">Carga tu video de YouTube</li>
-                    <li style="margin: 8px 0;">Presiona "Iniciar Rastreo" y <strong>mira el video normalmente</strong></li>
-                    <li style="margin: 8px 0;">WebGazer rastreará automáticamente hacia dónde miras</li>
+                    <li style="margin: 8px 0;">Presiona "Iniciar Rastreo" y <strong>mira el video normalmente SIN mover la cabeza</strong></li>
                     <li style="margin: 8px 0;">Descarga el CSV cuando termines</li>
                 </ol>
-                <p style="margin-top: 15px; color: #856404;"><strong>Importante:</strong> Necesitas buena iluminación y mantener tu rostro visible. No te muevas mucho durante el rastreo.</p>
+                <p style="margin-top: 15px; color: #856404;"><strong>Importante:</strong> Buena iluminación, rostro centrado en la cámara, no muevas mucho la cabeza.</p>
             </div>
         </div>
     </div>
@@ -199,34 +167,8 @@
         let isTracking = false;
         let isCalibrated = false;
         let startTime = 0;
-        let canvas, ctx;
         let webgazerReady = false;
-
-        // Inicializar
-        window.onload = () => {
-            canvas = document.getElementById('gazeCanvas');
-            ctx = canvas.getContext('2d');
-            resizeCanvas();
-            window.addEventListener('resize', resizeCanvas);
-            
-            // Esperar a que WebGazer esté disponible
-            waitForWebGazer();
-        };
-
-        function waitForWebGazer() {
-            if (typeof webgazer !== 'undefined') {
-                webgazerReady = true;
-                updateStatus('✅ WebGazer listo. Presiona "Iniciar Calibración"');
-            } else {
-                setTimeout(waitForWebGazer, 100);
-            }
-        }
-
-        function resizeCanvas() {
-            const container = document.querySelector('.video-container');
-            canvas.width = container.offsetWidth;
-            canvas.height = container.offsetHeight;
-        }
+        let calibrationClicks = 0;
 
         // Cargar YouTube API
         const tag = document.createElement('script');
@@ -238,74 +180,90 @@
                 height: '100%',
                 width: '100%',
                 videoId: 'dQw4w9WgXcQ',
-                playerVars: {
-                    'playsinline': 1
-                }
+                playerVars: { 'playsinline': 1 }
             });
         }
 
+        // Inicializar WebGazer cuando la página cargue
+        window.addEventListener('load', function() {
+            updateStatus('⏳ Iniciando WebGazer...');
+            
+            webgazer.setRegression('ridge')
+                .setTracker('TFFacemesh')
+                .begin()
+                .then(() => {
+                    webgazerReady = true;
+                    updateStatus('✅ WebGazer listo. Presiona "Iniciar Calibración"');
+                    document.getElementById('calibrateBtn').disabled = false;
+                })
+                .catch(err => {
+                    updateStatus('❌ Error al iniciar WebGazer: ' + err.message);
+                    console.error(err);
+                });
+
+            // Pausar predicciones hasta que calibremos
+            webgazer.pause();
+        });
+
         function updateStatus(message) {
             document.getElementById('status').textContent = message;
+            console.log('Status:', message);
         }
 
         async function startCalibration() {
             if (!webgazerReady) {
-                updateStatus('⚠️ WebGazer aún no está listo. Espera un momento...');
+                updateStatus('⚠️ WebGazer aún no está listo');
                 return;
             }
 
+            updateStatus('🎥 Iniciando calibración... Permite el acceso a la cámara si te lo pide');
+            document.getElementById('calibrateBtn').disabled = true;
+            
             try {
-                updateStatus('🎥 Iniciando WebGazer... Permite el acceso a la cámara');
-                document.getElementById('calibrateBtn').disabled = true;
+                // Reanudar WebGazer
+                webgazer.resume();
+                webgazer.showPredictionPoints(true);
                 
-                // Configurar el listener de mirada
-                webgazer.setGazeListener((data, timestamp) => {
-                    if (data == null || !isTracking) return;
-                    
-                    // Convertir coordenadas de pantalla a coordenadas del video
-                    const videoContainer = document.querySelector('.video-container');
-                    const rect = videoContainer.getBoundingClientRect();
-                    
-                    const x = Math.round(data.x - rect.left);
-                    const y = Math.round(data.y - rect.top);
-                    
-                    // Solo guardar si está dentro del área del video
-                    if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
-                        const relativeTime = Date.now() - startTime;
-                        const videoTime = player && player.getCurrentTime ? player.getCurrentTime() : 0;
-                        
-                        gazeData.push({
-                            timestamp: relativeTime,
-                            x: x,
-                            y: y,
-                            videoTime: videoTime
-                        });
-                        
-                        // Dibujar punto de mirada
-                        drawGazePoint(x, y);
-                    }
-                });
-
-                // Iniciar WebGazer
-                await webgazer.begin();
+                // Esperar un momento para que se inicialice la cámara
+                await new Promise(resolve => setTimeout(resolve, 2000));
                 
-                // Esperar a que se inicialice
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                calibrationClicks = 0;
+                updateStatus('👆 HAZ CLIC en 9 puntos diferentes de la pantalla (esquinas, centro, etc.) mientras los miras fijamente. Clics: 0/9');
                 
-                updateStatus('👁️ Mira diferentes partes de la pantalla durante 15 segundos para calibrar. Haz clic donde miras.');
+                // Escuchar clics para calibración
+                document.addEventListener('click', calibrationClickHandler);
                 
-                // Dar tiempo para calibración manual
+                // Auto-completar después de 25 segundos
                 setTimeout(() => {
-                    isCalibrated = true;
-                    document.getElementById('startBtn').disabled = false;
-                    updateStatus('✅ Calibración completa. Carga tu video e inicia el rastreo.');
-                }, 15000);
-
+                    if (!isCalibrated) {
+                        finishCalibration();
+                    }
+                }, 25000);
+                
             } catch (error) {
-                updateStatus('❌ Error: ' + error.message + ' - Asegúrate de permitir el acceso a la cámara');
-                console.error('Error completo:', error);
+                updateStatus('❌ Error: ' + error.message);
+                console.error('Error en calibración:', error);
                 document.getElementById('calibrateBtn').disabled = false;
             }
+        }
+
+        function calibrationClickHandler(e) {
+            calibrationClicks++;
+            updateStatus(`👆 Calibrando... Clics: ${calibrationClicks}/9 - Sigue haciendo clic en diferentes puntos`);
+            
+            // Registrar el clic para calibración
+            webgazer.recordScreenPosition(e.clientX, e.clientY, 'click');
+            
+            if (calibrationClicks >= 9) {
+                finishCalibration();
+            }
+        }
+
+        function finishCalibration() {
+            document.removeEventListener('click', calibrationClickHandler);
+            isCalibrated = true;
+            document.getElementById('startBtn').disabled = false;
+            updateStatus(`✅ Calibración completa con ${calibrationClicks} puntos. Carga tu video e inicia el rastreo.`);
         }
 
         function extractVideoId(url) {
@@ -338,11 +296,35 @@
             document.getElementById('stopBtn').disabled = false;
             document.getElementById('statsPanel').style.display = 'block';
             
-            updateStatus('🔴 RASTREANDO - Mira el video normalmente. WebGazer rastrea tus ojos.');
+            updateStatus('🔴 RASTREANDO - Mira el video normalmente. No muevas mucho la cabeza.');
             
             if (player && player.playVideo) {
                 player.playVideo();
             }
+
+            // Configurar listener de mirada
+            webgazer.setGazeListener((data, timestamp) => {
+                if (!isTracking || !data) return;
+                
+                const videoContainer = document.querySelector('.video-container');
+                const rect = videoContainer.getBoundingClientRect();
+                
+                const x = Math.round(data.x - rect.left);
+                const y = Math.round(data.y - rect.top);
+                
+                // Solo guardar si está dentro del video
+                if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
+                    const relativeTime = Date.now() - startTime;
+                    const videoTime = player && player.getCurrentTime ? player.getCurrentTime() : 0;
+                    
+                    gazeData.push({
+                        timestamp: relativeTime,
+                        x: x,
+                        y: y,
+                        videoTime: videoTime
+                    });
+                }
+            });
 
             // Actualizar estadísticas
             const statsInterval = setInterval(() => {
@@ -351,15 +333,7 @@
                     return;
                 }
                 updateStats();
-            }, 1000);
-        }
-
-        function drawGazePoint(x, y) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = 'rgba(255, 0, 0, 0.6)';
-            ctx.beginPath();
-            ctx.arc(x, y, 15, 0, 2 * Math.PI);
-            ctx.fill();
+            }, 500);
         }
 
         function stopTracking() {
@@ -369,14 +343,15 @@
             document.getElementById('stopBtn').disabled = true;
             document.getElementById('downloadBtn').disabled = false;
             
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Remover listener
+            webgazer.setGazeListener(null);
             
             if (player && player.pauseVideo) {
                 player.pauseVideo();
             }
             
             updateStats();
-            updateStatus(`✅ Rastreo detenido. ${gazeData.length} puntos capturados. Descarga el CSV.`);
+            updateStatus(`✅ Rastreo detenido. ${gazeData.length} puntos capturados. ${gazeData.length > 0 ? 'Descarga el CSV.' : '⚠️ No se capturaron datos - asegúrate de que tu rostro esté visible en la cámara.'}`);
         }
 
         function updateStats() {
