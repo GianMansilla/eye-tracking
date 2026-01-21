@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eye Tracking YouTube - WebGazer Real</title>
+    <script src="https://cdn.jsdelivr.net/npm/webgazer@2.0.1/dist/webgazer.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .status {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            color: #1565C0;
+            font-weight: 500;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .btn-green { background: #4CAF50; color: white; }
+        .btn-green:hover:not(:disabled) { background: #45a049; }
+        .btn-blue { background: #2196F3; color: white; }
+        .btn-blue:hover:not(:disabled) { background: #0b7dda; }
+        .btn-orange { background: #FF9800; color: white; }
+        .btn-orange:hover:not(:disabled) { background: #e68900; }
+        .btn-purple { background: #9C27B0; color: white; }
+        .btn-purple:hover:not(:disabled) { background: #7B1FA2; }
+        .btn-red { background: #f44336; color: white; }
+        .btn-red:hover:not(:disabled) { background: #da190b; }
+        
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            min-width: 300px;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .video-container {
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            height: 500px;
+            margin: 20px 0;
+            position: relative;
+        }
+        #gazeCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .stat-box {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+        }
+        .instructions {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+        }
+        .instructions h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="panel">
+            <h1>👁️ Eye Tracking YouTube - WebGazer Real</h1>
+            <div class="status" id="status">Cargando WebGazer...</div>
+
+            <div class="input-group">
+                <input type="text" id="videoUrl" placeholder="ID o URL del video de YouTube" value="dQw4w9WgXcQ">
+                <button class="btn-red" onclick="loadVideo()">Cargar Video</button>
+            </div>
+
+            <div class="controls">
+                <button id="calibrateBtn" class="btn-green" onclick="startCalibration()">Iniciar Calibración</button>
+                <button id="startBtn" class="btn-blue" onclick="startTracking()" disabled>▶ Iniciar Rastreo</button>
+                <button id="stopBtn" class="btn-orange" onclick="stopTracking()" disabled>⏸ Detener Rastreo</button>
+                <button id="downloadBtn" class="btn-purple" onclick="downloadCSV()" disabled>⬇ Descargar CSV</button>
+            </div>
+
+            <div class="video-container">
+                <div id="player"></div>
+                <canvas id="gazeCanvas"></canvas>
+            </div>
+
+            <div id="statsPanel" style="display: none;">
+                <h3>Estadísticas del Rastreo:</h3>
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-label">Puntos capturados</div>
+                        <div class="stat-value" id="pointsCount">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Duración (segundos)</div>
+                        <div class="stat-value" id="duration">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Frecuencia (Hz)</div>
+                        <div class="stat-value" id="frequency">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="instructions">
+                <h3>📋 Instrucciones:</h3>
+                <ol style="margin-left: 20px; color: #856404;">
+                    <li style="margin: 8px 0;"><strong>Permite el acceso a la cámara</strong> cuando te lo pida</li>
+                    <li style="margin: 8px 0;">Presiona "Iniciar Calibración" y <strong>haz clic en cada punto rojo</strong> que aparece (9 puntos en total)</li>
+                    <li style="margin: 8px 0;">Mantén tu cabeza quieta y mira directamente cada punto</li>
+                    <li style="margin: 8px 0;">Carga tu video de YouTube</li>
+                    <li style="margin: 8px 0;">Presiona "Iniciar Rastreo" y <strong>mira el video normalmente</strong></li>
+                    <li style="margin: 8px 0;">WebGazer rastreará automáticamente hacia dónde miras</li>
+                    <li style="margin: 8px 0;">Descarga el CSV cuando termines</li>
+                </ol>
+                <p style="margin-top: 15px; color: #856404;"><strong>Importante:</strong> Necesitas buena iluminación y mantener tu rostro visible. No te muevas mucho durante el rastreo.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let player;
+        let gazeData = [];
+        let isTracking = false;
+        let isCalibrated = false;
+        let startTime = 0;
+        let canvas, ctx;
+        let webgazerReady = false;
+
+        // Inicializar
+        window.onload = () => {
+            canvas = document.getElementById('gazeCanvas');
+            ctx = canvas.getContext('2d');
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // Esperar a que WebGazer esté disponible
+            waitForWebGazer();
+        };
+
+        function waitForWebGazer() {
+            if (typeof webgazer !== 'undefined') {
+                webgazerReady = true;
+                updateStatus('✅ WebGazer listo. Presiona "Iniciar Calibración"');
+            } else {
+                setTimeout(waitForWebGazer, 100);
+            }
+        }
+
+        function resizeCanvas() {
+            const container = document.querySelector('.video-container');
+            canvas.width = container.offsetWidth;
+            canvas.height = container.offsetHeight;
+        }
+
+        // Cargar YouTube API
+        const tag = document.createElement('script');
+        tag.src = 'https://www.youtube.com/iframe_api';
+        document.body.appendChild(tag);
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '100%',
+                width: '100%',
+                videoId: 'dQw4w9WgXcQ',
+                playerVars: {
+                    'playsinline': 1
+                }
+            });
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+
+        async function startCalibration() {
+            if (!webgazerReady) {
+                updateStatus('⚠️ WebGazer aún no está listo. Espera un momento...');
+                return;
+            }
+
+            try {
+                updateStatus('🎥 Iniciando WebGazer... Permite el acceso a la cámara');
+                document.getElementById('calibrateBtn').disabled = true;
+                
+                // Configurar el listener de mirada
+                webgazer.setGazeListener((data, timestamp) => {
+                    if (data == null || !isTracking) return;
+                    
+                    // Convertir coordenadas de pantalla a coordenadas del video
+                    const videoContainer = document.querySelector('.video-container');
+                    const rect = videoContainer.getBoundingClientRect();
+                    
+                    const x = Math.round(data.x - rect.left);
+                    const y = Math.round(data.y - rect.top);
+                    
+                    // Solo guardar si está dentro del área del video
+                    if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
+                        const relativeTime = Date.now() - startTime;
+                        const videoTime = player && player.getCurrentTime ? player.getCurrentTime() : 0;
+                        
+                        gazeData.push({
+                            timestamp: relativeTime,
+                            x: x,
+                            y: y,
+                            videoTime: videoTime
+                        });
+                        
+                        // Dibujar punto de mirada
+                        drawGazePoint(x, y);
+                    }
+                });
+
+                // Iniciar WebGazer
+                await webgazer.begin();
+                
+                // Esperar a que se inicialice
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                updateStatus('👁️ Mira diferentes partes de la pantalla durante 15 segundos para calibrar. Haz clic donde miras.');
+                
+                // Dar tiempo para calibración manual
+                setTimeout(() => {
+                    isCalibrated = true;
+                    document.getElementById('startBtn').disabled = false;
+                    updateStatus('✅ Calibración completa. Carga tu video e inicia el rastreo.');
+                }, 15000);
+
+            } catch (error) {
+                updateStatus('❌ Error: ' + error.message + ' - Asegúrate de permitir el acceso a la cámara');
+                console.error('Error completo:', error);
+                document.getElementById('calibrateBtn').disabled = false;
+            }
+        }
+
+        function extractVideoId(url) {
+            const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+            const match = url.match(regex);
+            return match ? match[1] : url;
+        }
+
+        function loadVideo() {
+            const url = document.getElementById('videoUrl').value;
+            const videoId = extractVideoId(url);
+            
+            if (player && player.loadVideoById) {
+                player.loadVideoById(videoId);
+                updateStatus('📹 Video cargado. ' + (isCalibrated ? 'Puedes iniciar el rastreo.' : 'Primero calibra el sistema.'));
+            }
+        }
+
+        function startTracking() {
+            if (!isCalibrated) {
+                updateStatus('⚠️ Primero debes calibrar el sistema');
+                return;
+            }
+
+            gazeData = [];
+            startTime = Date.now();
+            isTracking = true;
+            
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            document.getElementById('statsPanel').style.display = 'block';
+            
+            updateStatus('🔴 RASTREANDO - Mira el video normalmente. WebGazer rastrea tus ojos.');
+            
+            if (player && player.playVideo) {
+                player.playVideo();
+            }
+
+            // Actualizar estadísticas
+            const statsInterval = setInterval(() => {
+                if (!isTracking) {
+                    clearInterval(statsInterval);
+                    return;
+                }
+                updateStats();
+            }, 1000);
+        }
+
+        function drawGazePoint(x, y) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.6)';
+            ctx.beginPath();
+            ctx.arc(x, y, 15, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
+        function stopTracking() {
+            isTracking = false;
+            
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('downloadBtn').disabled = false;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (player && player.pauseVideo) {
+                player.pauseVideo();
+            }
+            
+            updateStats();
+            updateStatus(`✅ Rastreo detenido. ${gazeData.length} puntos capturados. Descarga el CSV.`);
+        }
+
+        function updateStats() {
+            document.getElementById('pointsCount').textContent = gazeData.length;
+            
+            if (gazeData.length > 0) {
+                const duration = Math.round(gazeData[gazeData.length - 1].timestamp / 1000);
+                document.getElementById('duration').textContent = duration;
+                
+                const frequency = duration > 0 ? Math.round(gazeData.length / duration) : 0;
+                document.getElementById('frequency').textContent = frequency;
+            }
+        }
+
+        function downloadCSV() {
+            if (gazeData.length === 0) {
+                updateStatus('⚠️ No hay datos para descargar');
+                return;
+            }
+
+            const headers = ['timestamp_ms', 'x_pixels', 'y_pixels', 'video_time_seconds'];
+            const csvContent = [
+                headers.join(','),
+                ...gazeData.map(d => `${d.timestamp},${d.x},${d.y},${d.videoTime.toFixed(2)}`)
+            ].join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const filename = `eye_tracking_${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.csv`;
+            
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+
+            updateStatus(`✅ CSV descargado: ${filename} con ${gazeData.length} puntos`);
+        }
+    </script>
+</body>
+</html>
