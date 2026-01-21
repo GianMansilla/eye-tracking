@@ -178,19 +178,16 @@
             updateStatus('🎥 Iniciando WebGazer... Permite el acceso a la cámara');
             document.getElementById('calibrateBtn').disabled = true;
             
-            // Configurar WebGazer según documentación oficial
-            webgazer.setRegression('ridge')
-                .setTracker('TFFacemesh')
-                .setGazeListener(function(data, elapsedTime) {
+            try {
+                // Iniciar WebGazer de la forma más simple
+                webgazer.setGazeListener(function(data, elapsedTime) {
                     if (data == null) return;
                     // Durante calibración no guardamos datos
-                })
-                .begin()
-                .then(() => {
+                }).begin();
+                
+                // Esperar a que WebGazer se inicialice
+                setTimeout(() => {
                     updateStatus('✅ Cámara iniciada. Preparando calibración...');
-                    
-                    // Pausar predicciones hasta terminar calibración
-                    webgazer.pause();
                     
                     // Crear puntos de calibración (9 puntos en grid 3x3)
                     const width = window.innerWidth;
@@ -211,12 +208,13 @@
                     
                     currentCalibrationPoint = 0;
                     showNextCalibrationPoint();
-                })
-                .catch(err => {
-                    updateStatus('❌ Error: ' + err.message);
-                    console.error(err);
-                    document.getElementById('calibrateBtn').disabled = false;
-                });
+                }, 2000);
+                
+            } catch(err) {
+                updateStatus('❌ Error: ' + err.message);
+                console.error('Error completo:', err);
+                document.getElementById('calibrateBtn').disabled = false;
+            }
         }
 
         function showNextCalibrationPoint() {
@@ -262,9 +260,6 @@
             
             // Esperar click en el punto
             dot.addEventListener('click', function() {
-                // Reanudar WebGazer brevemente para registrar el click
-                webgazer.resume();
-                
                 // Registrar varios puntos alrededor del click para mejor calibración
                 for (let i = 0; i < 5; i++) {
                     setTimeout(() => {
@@ -272,16 +267,12 @@
                         const jitterX = point.x + (Math.random() - 0.5) * offset;
                         const jitterY = point.y + (Math.random() - 0.5) * offset;
                         
-                        // Esto es clave: registrar la posición en la pantalla
-                        document.dispatchEvent(new MouseEvent('click', {
-                            clientX: jitterX,
-                            clientY: jitterY
-                        }));
+                        // WebGazer aprende automáticamente de los clics
+                        webgazer.recordScreenPosition(jitterX, jitterY);
                     }, i * 100);
                 }
                 
                 setTimeout(() => {
-                    webgazer.pause();
                     dot.remove();
                     currentCalibrationPoint++;
                     
@@ -296,7 +287,6 @@
             updateStatus('✅ Calibración completa. Carga tu video e inicia el rastreo.');
             isCalibrated = true;
             document.getElementById('startBtn').disabled = false;
-            webgazer.resume();
         }
 
         function extractVideoId(url) {
