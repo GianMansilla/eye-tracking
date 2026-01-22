@@ -319,7 +319,7 @@
             document.getElementById('stopBtn').disabled = false;
             document.getElementById('statsPanel').style.display = 'block';
             
-            updateStatus('🔴 RASTREANDO - Mira el video normalmente');
+            updateStatus('🔴 RASTREANDO - Mira el video normalmente. Puntos capturados: 0');
             
             if (player && player.playVideo) {
                 player.playVideo();
@@ -327,7 +327,12 @@
 
             // Configurar listener según documentación oficial
             webgazer.setGazeListener(function(data, elapsedTime) {
-                if (!isTracking || data == null) return;
+                if (!isTracking || data == null) {
+                    console.log('No tracking or no data');
+                    return;
+                }
+                
+                console.log('Gaze data:', data); // Debug
                 
                 const videoContainer = document.querySelector('.video-container');
                 const rect = videoContainer.getBoundingClientRect();
@@ -336,17 +341,24 @@
                 const x = Math.round(data.x - rect.left);
                 const y = Math.round(data.y - rect.top);
                 
-                // Solo guardar si está dentro del video
-                if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
-                    const relativeTime = Date.now() - startTime;
-                    const videoTime = player && player.getCurrentTime ? player.getCurrentTime() : 0;
-                    
-                    gazeData.push({
-                        timestamp: relativeTime,
-                        x: x,
-                        y: y,
-                        videoTime: videoTime
-                    });
+                console.log('Relative coords:', x, y, 'Bounds:', rect.width, rect.height); // Debug
+                
+                // Guardar TODOS los datos, incluso si están fuera (para debug)
+                const relativeTime = Date.now() - startTime;
+                const videoTime = player && player.getCurrentTime ? player.getCurrentTime() : 0;
+                
+                gazeData.push({
+                    timestamp: relativeTime,
+                    x: x,
+                    y: y,
+                    videoTime: videoTime,
+                    rawX: data.x,
+                    rawY: data.y
+                });
+                
+                // Actualizar status cada 100 puntos
+                if (gazeData.length % 100 === 0) {
+                    updateStatus(`🔴 RASTREANDO - Puntos capturados: ${gazeData.length}`);
                 }
             });
 
@@ -398,10 +410,10 @@
                 return;
             }
 
-            const headers = ['timestamp_ms', 'x_pixels', 'y_pixels', 'video_time_seconds'];
+            const headers = ['timestamp_ms', 'x_pixels', 'y_pixels', 'video_time_seconds', 'raw_x', 'raw_y'];
             const csvContent = [
                 headers.join(','),
-                ...gazeData.map(d => `${d.timestamp},${d.x},${d.y},${d.videoTime.toFixed(2)}`)
+                ...gazeData.map(d => `${d.timestamp},${d.x},${d.y},${d.videoTime.toFixed(2)},${d.rawX},${d.rawY}`)
             ].join('\n');
 
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
