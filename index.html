@@ -200,10 +200,12 @@
             document.getElementById('startCalibration').disabled = true;
 
             webgazer.setGazeListener(function(data, elapsedTime) {
+                console.log('WebGazer data:', data); // DEBUG
+                
                 // Durante calibración, solo mostramos que está funcionando
-                if (!webgazerStarted) {
+                if (!webgazerStarted && data != null) {
                     webgazerStarted = true;
-                    updateStatus('✅ WebGazer iniciado. HAZ CLICK en diferentes puntos de la pantalla mientras los miras (mínimo 9 puntos). Cuando termines, carga tu video.');
+                    updateStatus('✅ ¡WebGazer detectó tu rostro! HAZ CLICK en diferentes puntos de la pantalla mientras los miras (mínimo 9 puntos). Cuando termines, carga tu video.');
                     document.getElementById('startTracking').disabled = false;
                 }
 
@@ -226,12 +228,31 @@
                 }
             }).begin();
 
-            // Dar tiempo para inicialización
-            setTimeout(() => {
-                if (!webgazerStarted) {
-                    updateStatus('⏳ WebGazer iniciando... HAZ CLICK en la pantalla para ayudar a calibrar');
+            // Verificación periódica
+            let checkCount = 0;
+            const checkInterval = setInterval(() => {
+                checkCount++;
+                console.log('Check #' + checkCount); // DEBUG
+                
+                if (webgazerStarted) {
+                    clearInterval(checkInterval);
+                    return;
                 }
-            }, 3000);
+                
+                if (checkCount === 2) {
+                    updateStatus('⏳ Esperando que detecte tu rostro... Asegúrate de permitir la cámara y que tu cara esté bien iluminada');
+                }
+                
+                if (checkCount === 5) {
+                    updateStatus('⚠️ WebGazer tarda en detectar tu rostro. Verifica: 1) Permitiste la cámara? 2) Hay buena iluminación? 3) Tu rostro está centrado?');
+                }
+                
+                if (checkCount > 10) {
+                    clearInterval(checkInterval);
+                    updateStatus('❌ WebGazer no puede detectar tu rostro. Recarga la página e intenta con mejor iluminación. Abre la consola (F12) para ver errores.');
+                    document.getElementById('startCalibration').disabled = false;
+                }
+            }, 2000);
         }
 
         function extractVideoId(url) {
